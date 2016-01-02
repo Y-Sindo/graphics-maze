@@ -1,6 +1,9 @@
 #include <GL/glut.h>
 #include <math.h>
+#include <iostream>
+#include "generateMaze.h"
 
+using namespace std;
 #define BLOCK_SIZE (10.0)
 #define BLOCK_HEIGHT (20.0)
 #define PI (3.1415926)
@@ -10,9 +13,7 @@ GLdouble eye_pos[3] = { 1.5*BLOCK_SIZE, 8, 0, };
 GLdouble center[3] = { 1.5*BLOCK_SIZE, 8, -2 * BLOCK_SIZE };//c=e+ 旋转后的d
 GLdouble angle = -PI / 2;  //方向向量与x轴的夹角
 						  //长度为2*BLOCK_SIZE	
-
 GLfloat view_width, view_height;
-
 
 void Draw_Maze( int **  matrix,int matrix_size) 
 {
@@ -35,7 +36,15 @@ void Draw_Maze( int **  matrix,int matrix_size)
 void redraw()
 {
 	//生成迷宫
-	
+	vector<vector<int>> maze;
+	getNewMaze(10, 10, maze);
+	// maze有一个入口和一个出口，maze[1][0],maze[2*h-1][2*w]
+	for (int i = 0; i < 10 * 2 + 1; i++) {
+		for (int j = 0; j < 10 * 2 + 1; j++) {
+			cout << maze[i][j];
+		}
+		cout << endl;
+	}
 
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);//开启深度测试之前必须调用这个函数。
 	glPushMatrix();								
