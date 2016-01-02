@@ -1,7 +1,11 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <GL/glut.h>
 #include <math.h>
 #include <iostream>
+#include <time.h>
 #include "generateMaze.h"
+#include "screenShot.h"
 
 using namespace std;
 #define BLOCK_SIZE (10.0)
@@ -39,12 +43,12 @@ void redraw()
 	vector<vector<int>> maze;
 	getNewMaze(10, 10, maze);
 	// maze有一个入口和一个出口，maze[1][0],maze[2*h-1][2*w]
-	for (int i = 0; i < 10 * 2 + 1; i++) {
+	/*for (int i = 0; i < 10 * 2 + 1; i++) {
 		for (int j = 0; j < 10 * 2 + 1; j++) {
 			cout << maze[i][j];
 		}
 		cout << endl;
-	}
+	}*/
 
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);//开启深度测试之前必须调用这个函数。
 	glPushMatrix();								
@@ -117,7 +121,6 @@ bool collision_detection(GLdouble new_x, GLdouble new_z){
 
 }
 
-
 void key(unsigned char k, int x, int y){
 	GLdouble length = 1;
 	switch (k){
@@ -145,6 +148,9 @@ void key(unsigned char k, int x, int y){
 	case 'a'://左转，角度减小10度
 		angle -= 10.0 / 180 * PI;
 		break;
+
+	case '0':
+		newScreenShot(700, 700, "ScreenShots/tmp.bmp");
 	}
 	updateView(view_width,view_height);
 }
