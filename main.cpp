@@ -6,6 +6,7 @@
 #include <time.h>
 #include "generateMaze.h"
 #include "screenShot.h"
+#include "addTexture.h"
 
 using namespace std;
 #define BLOCK_SIZE (10.0)
@@ -13,7 +14,9 @@ using namespace std;
 #define PI (3.1415926)
 #define MAZE_SIZE 21
 
+
 vector<vector<int>> maze_matrix;
+GLuint texture[1];
 
 GLdouble eye_pos[3] = { 1.5*BLOCK_SIZE, 8, 0, };
 GLdouble center[3] = { 1.5*BLOCK_SIZE, 8, -2 * BLOCK_SIZE };//c=e+ 旋转后的d
@@ -22,13 +25,60 @@ GLdouble angle = -PI / 2;  //方向向量与x轴的夹角
 GLfloat view_width, view_height;
 
 bool view_first=true;
+void Draw_Cube(float size)
+{
+	float r = size/2;
+	glBegin(GL_QUADS);              	
+	glTexCoord2i(0,0); glVertex3f(-r,-r,-r);
+	glTexCoord2i(0,1); glVertex3f(-r,-r,r);
+	glTexCoord2i(1,1); glVertex3f(r,-r,r);
+	glTexCoord2i(1,0); glVertex3f(r,-r,-r);
+	glEnd();
+
+	glBegin(GL_QUADS);              	
+	glTexCoord2i(0,0); glVertex3f(r,-r,-r);
+	glTexCoord2i(0,1); glVertex3f(r,-r,r);
+	glTexCoord2i(1,1); glVertex3f(r,r,r);
+	glTexCoord2i(1,0); glVertex3f(r,r,-r);
+	glEnd();
+
+	glBegin(GL_QUADS);              	
+	glTexCoord2i(0,0); glVertex3f(r,r,-r);
+	glTexCoord2i(0,1); glVertex3f(r,r,r);
+	glTexCoord2i(1,1); glVertex3f(-r,r,r);
+	glTexCoord2i(1,0); glVertex3f(-r,r,-r);
+	glEnd();
+
+	glBegin(GL_QUADS);              	
+	glTexCoord2i(0,0); glVertex3f(-r,r,-r);
+	glTexCoord2i(0,1); glVertex3f(-r,r,r);
+	glTexCoord2i(1,1); glVertex3f(-r,-r,r);
+	glTexCoord2i(1,0); glVertex3f(-r,-r,-r);
+	glEnd();
+
+	glBegin(GL_QUADS);              	
+	glTexCoord2i(0,0); glVertex3f(-r,-r,r);
+	glTexCoord2i(0,1); glVertex3f(-r,r,r);
+	glTexCoord2i(1,1); glVertex3f(r,r,r);
+	glTexCoord2i(1,0); glVertex3f(r,-r,r);
+	glEnd();
+
+	glBegin(GL_QUADS);              	
+	glTexCoord2i(0,0); glVertex3f(-r,r,-r);
+	glTexCoord2i(0,1); glVertex3f(-r,-r,-r);
+	glTexCoord2i(1,1); glVertex3f(r,-r,-r);
+	glTexCoord2i(1,0); glVertex3f(r,r,-r);
+	glEnd();
+}
 
 void Draw_Maze(vector<vector<int>>&  matrix, int matrix_size)
 {
 	GLint wall_color[4] = { 1, 1, 1, 1 };
 	glMaterialiv(GL_FRONT_AND_BACK, GL_AMBIENT, wall_color);
 
-	glColor3f(1, 0, 0);
+	//glColor3f(1, 0, 0);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, texture[0]);
 	for (int i = 0; i < matrix_size; i++)
 		for (int j = 0; j < matrix_size; j++){
 			if (matrix[i][j] == 0) continue;
@@ -36,14 +86,14 @@ void Draw_Maze(vector<vector<int>>&  matrix, int matrix_size)
 			glTranslatef(i*10.0, 0, -j*10.0);
 			glTranslatef(5.0, 10.0, -5.0);
 			glScalef(BLOCK_SIZE, BLOCK_HEIGHT, BLOCK_SIZE);
-			glutSolidCube(1.0);
+			Draw_Cube(1.0);
 			glPopMatrix();
 	}
+	glDisable(GL_TEXTURE_2D);
 }
 
 void redraw()
 {
-	
 
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);//开启深度测试之前必须调用这个函数。
 	glPushMatrix();								
@@ -55,6 +105,7 @@ void redraw()
 
 void updateView(int width, int height){
 	glClear(GL_DEPTH_BUFFER_BIT);//开启深度测试之前必须调用这个函数。
+	glShadeModel(GL_SMOOTH);
 	glMatrixMode(GL_MODELVIEW);
 	if (height == 0)										// Prevent A Divide By Zero By
 	{
@@ -72,7 +123,6 @@ void updateView(int width, int height){
 	else
 		gluLookAt(0, 60, 0, 0, 0, 0, 0, 0, -1);  //俯视视角
 	
-
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	if (view_first)
@@ -93,16 +143,12 @@ void reshape(int width, int height)
 	
 	updateView(width,height);
 
-	
-
-
-
 	//设置光照          
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	GLfloat light_pos[4] = { 60, 60, -40.0, 1 };
-	GLfloat light_color[4] = { 0.5, 0.5, 0.5, 1 };
+	GLfloat light_color[4] = { 1, 1, 1, 1 };
 	glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, light_color);
 	
@@ -180,7 +226,7 @@ void idle()
 int main(int argc, char *argv[])
 {
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE |GLUT_DEPTH);
 	glutInitWindowSize(700, 700);      
 
 
@@ -196,7 +242,8 @@ int main(int argc, char *argv[])
 	}
 	int windowHandle
 		= glutCreateWindow("Maze-Game");
-
+	
+	getTexture(texture);
 	glutDisplayFunc(redraw);
 	glutReshapeFunc(reshape);		
 	glutIdleFunc(idle);							
