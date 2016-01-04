@@ -13,7 +13,7 @@ unsigned char *LoadBitmapFile(char *filename, BITMAPINFOHEADER *bitmapInfoHeader
 	unsigned char	tempRGB;	// 交换变量
 
 	// 以“二进制+读”模式打开文件filename 
-	filePtr = fopen(filename, "rb"); 
+	fopen_s(&filePtr,filename, "rb"); 
 	if (filePtr == NULL)
 		return NULL;
 	// 读入bitmap文件图
@@ -86,5 +86,5 @@ void texload(int i,char *filename,GLuint *texture)
 void getTexture(GLuint *texture)
 {	
 	glGenTextures(1, texture);// 第一参数是需要生成标示符的个数, 第二参数是返回标示符的数组
-	texload(0,"Maze.bmp",texture);
+	texload(0,"Maze.bmp",(GLuint*)texture);
 }
