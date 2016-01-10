@@ -51,12 +51,12 @@ void updateView(int width, int height){
 	if (view_first)
 		gluLookAt(eye_pos[0], eye_pos[1], eye_pos[2], center[0], center[1], center[2], 0, 1, 0);//第一人称视角
 	else
-		gluLookAt(0, 60, 0, 0, 0, 0, 0, 0, -1);  //俯视视角
+		gluLookAt(0, 20.1, 0, 0, 0, 0, 0, 0, -1);  //俯视视角
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	if (view_first)
-		gluPerspective(120.f, (GLfloat)width / (GLfloat)height, 4.0f, 210.0f);//第一人称
+		gluPerspective(60.f, (GLfloat)width / (GLfloat)height, 2.0f, 210.0f);//第一人称
 	else
 		glOrtho(0,210,0,210,0,60);//  俯视
 	glMatrixMode(GL_MODELVIEW);
@@ -101,7 +101,7 @@ bool collision_detection(GLdouble new_x, GLdouble new_z){
 }
 
 void key(unsigned char k, int x, int y){
-	GLdouble length = 1;
+	GLdouble length = 0.5;
 	switch (k){
 	case 'w':
 		eye_pos[0] += cos(angle)*length;
@@ -123,11 +123,11 @@ void key(unsigned char k, int x, int y){
 		break;
 
 	case 'd':
-		angle += 10.0 / 180 * PI;
+		angle += 3.0 / 180 * PI;
 		break;//右转，角度增加10度
 
 	case 'a':
-		angle -= 10.0 / 180 * PI;
+		angle -= 3.0 / 180 * PI;
 		break;//左转，角度减小10度
 
 	case 'v':
