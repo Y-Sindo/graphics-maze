@@ -17,23 +17,23 @@ void Draw_Cube(float size)
 	glEnd();
 
 	glBegin(GL_QUADS);
-	glTexCoord2i(0, 0); glVertex3f(r, -r, -r);
-	glTexCoord2i(0, 1); glVertex3f(r, -r, r);
-	glTexCoord2i(1, 1); glVertex3f(r, r, r);
-	glTexCoord2i(1, 0); glVertex3f(r, r, -r);
-	glEnd();
-
-	glBegin(GL_QUADS);
-	glTexCoord2i(0, 0); glVertex3f(r, r, -r);
+	glTexCoord2i(0, 0); glVertex3f(r, -r, r);
 	glTexCoord2i(0, 1); glVertex3f(r, r, r);
-	glTexCoord2i(1, 1); glVertex3f(-r, r, r);
-	glTexCoord2i(1, 0); glVertex3f(-r, r, -r);
+	glTexCoord2i(1, 1); glVertex3f(r, r, -r);
+	glTexCoord2i(1, 0); glVertex3f(r, -r, -r);
 	glEnd();
 
 	glBegin(GL_QUADS);
 	glTexCoord2i(0, 0); glVertex3f(-r, r, -r);
 	glTexCoord2i(0, 1); glVertex3f(-r, r, r);
-	glTexCoord2i(1, 1); glVertex3f(-r, -r, r);
+	glTexCoord2i(1, 1); glVertex3f(r, r, r);
+	glTexCoord2i(1, 0); glVertex3f(r, r, -r);
+	glEnd();
+
+	glBegin(GL_QUADS);
+	glTexCoord2i(0, 0); glVertex3f(-r, -r, r);
+	glTexCoord2i(0, 1); glVertex3f(-r, r, r);
+	glTexCoord2i(1, 1); glVertex3f(-r, r, -r);
 	glTexCoord2i(1, 0); glVertex3f(-r, -r, -r);
 	glEnd();
 
@@ -45,10 +45,10 @@ void Draw_Cube(float size)
 	glEnd();
 
 	glBegin(GL_QUADS);
-	glTexCoord2i(0, 0); glVertex3f(-r, r, -r);
-	glTexCoord2i(0, 1); glVertex3f(-r, -r, -r);
-	glTexCoord2i(1, 1); glVertex3f(r, -r, -r);
-	glTexCoord2i(1, 0); glVertex3f(r, r, -r);
+	glTexCoord2i(0, 0); glVertex3f(-r, -r, -r);
+	glTexCoord2i(0, 1); glVertex3f(-r, r, -r);
+	glTexCoord2i(1, 1); glVertex3f(r, r, -r);
+	glTexCoord2i(1, 0); glVertex3f(r, -r, -r);
 	glEnd();
 }
 
@@ -61,7 +61,7 @@ void Draw_Maze(vector<vector<int>>& matrix, int matrix_size)
 	glEnable(GL_TEXTURE_2D);
 	//glBindTexture(GL_TEXTURE_2D, texture[0]);
 	for (int i = 0; i < matrix_size; i++)
-		for (int j = 0; j < matrix_size; j++){
+		for (int j = 0; j < matrix_size; j++) {
 			if (matrix[i][j] == 0) continue;
 			glPushMatrix();
 			glTranslatef(i*10.0, 0, -j*10.0);
@@ -71,12 +71,35 @@ void Draw_Maze(vector<vector<int>>& matrix, int matrix_size)
 			glPopMatrix();
 		}
 	glDisable(GL_TEXTURE_2D);
+
+	//画天花板
+	for (int i = -1; i < matrix_size; i++)
+		for (int j = -1; j < matrix_size; j++) {
+			glPushMatrix();
+			glTranslatef(i*10.0, 0, -j*10.0);
+			glTranslatef(5.0, BLOCK_HEIGHT+0.1, -5.0);
+			glScalef(BLOCK_SIZE,1.0, BLOCK_SIZE);
+			Draw_Cube(1.0);
+			glPopMatrix();
+		}
+
+	//画地板
+	for (int i = -1; i < matrix_size; i++)
+		for (int j = -1; j < matrix_size; j++) {
+			glPushMatrix();
+			glTranslatef(i*10.0, 0, -j*10.0);
+			glTranslatef(5.0, -1.1, -5.0);
+			glScalef(BLOCK_SIZE, 1.0, BLOCK_SIZE);
+			Draw_Cube(1.0);
+			glPopMatrix();
+		}
+
 }
 
-void Draw_Coins(){
+void Draw_Coins() {
 
 }
 
-void Draw_Map(){
+void Draw_Map() {
 
 }
