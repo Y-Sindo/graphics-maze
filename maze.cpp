@@ -29,7 +29,9 @@ void redraw()
 	glPushMatrix();								
 	Draw_Maze(maze_matrix, 21);
 	glPopMatrix();
-
+	glPushMatrix();		
+	Draw_Text();
+	glPopMatrix();
 	glutSwapBuffers();
 }
 
@@ -174,12 +176,13 @@ int main(int argc, char *argv[])
 
 	int windowHandle
 		= glutCreateWindow("Maze-Game");
-	
+	initText();
 	getTexture(texture);
 	glutDisplayFunc(redraw);
 	glutReshapeFunc(reshape);		
 	glutIdleFunc(idle);							
 	glutKeyboardFunc(key);
+	glutTimerFunc(20,myTimer,0);
 	glutMainLoop();
 
 	return 0;
