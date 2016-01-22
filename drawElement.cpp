@@ -1,19 +1,30 @@
-#include "drawElement.h"
-#include "maze.h"
 #include <GL/glut.h>
 #include <string.h>
 #include <windows.h>
+#include "drawElement.h"
+#include "maze.h"
+#include "avi.h"
 
-extern GLuint *texture;
+extern GLuint texture[3];
+extern GLuint tv, lamp, coin;
 extern const float BLOCK_SIZE;
 extern const float BLOCK_HEIGHT;
+
+extern int coin_select;
+extern vector<vector<int>> maze_matrix;
 GLuint font_list; // Display list for outline font
 HDC current_dc;   // Device context
 HFONT myfont;     // Font handle
 HFONT oldfont;    // Old font handle
+GLfloat spin=1.0;
+
+int coinAll[201];
+int coinX[201];
+int coinY[201];
+
 float unit_font_descent; // Ratio between font descent and font height
-float spin=0.0;
-void Draw_Cube(float size)
+
+void drawCube(float size)
 {
 	float r = size / 2;
 	glBegin(GL_QUADS);
@@ -59,68 +70,89 @@ void Draw_Cube(float size)
 	glEnd();
 }
 
-void Draw_Maze(vector<vector<int>>& matrix, int matrix_size)
+float blue[] = { 0, 0, 1, 1 };
+void drawMaze(vector<vector<int>>& matrix, int matrix_size)
 {
 	GLint wall_color[4] = { 1, 1, 1, 1 };
 	glMaterialiv(GL_FRONT_AND_BACK, GL_AMBIENT, wall_color);
 
-	//glColor3f(1, 0, 0);
+	//»æÖÆÇ½±Ú
 	glEnable(GL_TEXTURE_2D);
-	//glBindTexture(GL_TEXTURE_2D, texture[0]);
+	glBindTexture(GL_TEXTURE_2D, texture[0]);
 	for (int i = 0; i < matrix_size; i++)
 		for (int j = 0; j < matrix_size; j++) {
 			if (matrix[i][j] == 0) continue;
 			glPushMatrix();
 			glTranslatef(i*10.0, 0, -j*10.0);
-			glTranslatef(5.0, 10.0, -5.0);
+			glTranslatef(BLOCK_SIZE / 2, BLOCK_HEIGHT / 2, -BLOCK_SIZE/2);
 			glScalef(BLOCK_SIZE, BLOCK_HEIGHT, BLOCK_SIZE);
-			Draw_Cube(1.0);
+			drawCube(1.0);
 			glPopMatrix();
 		}
-	glDisable(GL_TEXTURE_2D);
+	
 
-	//ç”»å¤©èŠ±æ¿
+	glBindTexture(GL_TEXTURE_2D, texture[1]);
+	//»­Ìì»¨°å
 	for (int i = -1; i < matrix_size; i++)
 		for (int j = -1; j < matrix_size; j++) {
 			glPushMatrix();
 			glTranslatef(i*10.0, 0, -j*10.0);
 			glTranslatef(5.0, BLOCK_HEIGHT+0.1, -5.0);
 			glScalef(BLOCK_SIZE,1.0, BLOCK_SIZE);
-			Draw_Cube(1.0);
+			drawCube(1.0);
 			glPopMatrix();
 		}
 
-	//ç”»åœ°æ¿
+	//»­µØ°å
 	for (int i = -1; i < matrix_size; i++)
 		for (int j = -1; j < matrix_size; j++) {
 			glPushMatrix();
 			glTranslatef(i*10.0, 0, -j*10.0);
 			glTranslatef(5.0, -1.1, -5.0);
 			glScalef(BLOCK_SIZE, 1.0, BLOCK_SIZE);
-			Draw_Cube(1.0);
+			drawCube(1.0);
 			glPopMatrix();
 		}
 
 }
 
-void Draw_Coins() {
-
+void initCoin(){
+	for (int i = 0; i<201; i++)
+	{
+		coinAll[i] = 1;	//name for coin
+		coinX[i] = 2 + rand() % 6;
+		coinY[i] = 2 + rand() % 6;
+	}
 }
 
-void Draw_Map() {
-
+void drawCoins(GLenum mode) {
+	/*»æÖÆÇ®±Ò*/
+	int count = 0;
+	for (int i = 0; i < MAZE_SIZE; i++)
+		for (int j = 0; j < MAZE_SIZE; j++, count++) {
+			if (maze_matrix[i][j] == 1) continue;
+			if (coinAll[count] == 0) continue;
+			if ((count % 4) != 0) continue;
+			glLoadName(count);
+			glPushMatrix();
+			glTranslatef(i*10.0, 0, -j*10.0);
+			glTranslatef(coinX[count], 0, -coinX[count]);
+			glScalef(0.2, 0.2, 0.2);
+			glCallList(coin);
+			glPopMatrix();
+		}
 }
-
 // Get text width and height ratio
-float GetTextAspectRatio(HDC hDC, char *str)
+float getTextAspectRatio(HDC hDC, char *str)
 {
 	SIZE s;
-	GetTextExtentPoint32(hDC, (wchar_t *)str, strlen(str), &s);
+	//GetTextExtentPoint32(hDC, (wchar_t *)str, strlen(str), &s);
+	GetTextExtentPoint32(hDC, (LPCWSTR) str, strlen(str), &s);
 	return (float)s.cx/(float)s.cy;
 }
 
 // Draw text string
-void draw_text_3D(HDC hDC, char *str)
+void drawText3D(HDC hDC, char *str)
 {
 	int i=0;
 	unsigned int ichar;
@@ -144,30 +176,31 @@ void draw_text_3D(HDC hDC, char *str)
 	}
 }
 
-void Draw_Text(){
-	float font_height=1.0, font_depth=0.1;
+void drawText(){
+	float font_height = 1.0, font_depth = 0.1;
 	float aspect;
-	static GLfloat mat_color[] = { 69.0/255, 139.0/255, 116.0/255, 1.0 };
-	static GLfloat mat_scolor[] = { 69.0/255, 139.0/255, 116.0/255, 1.0 };
-	char str[]="start";
+	static GLfloat mat_color[] = { 30.0 / 255, 255.0 / 255, 255.0 / 255, 1.0 };
+	static GLfloat mat_scolor[] = { 30.0 / 255, 255.0 / 255, 255.0 / 255, 1.0 };
+	char str[] = "start";
 	// Draw spinning 3D text
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mat_color);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_scolor);
 	glMaterialf(GL_FRONT, GL_SHININESS, 64.0);
 
 	glPushMatrix();
-	aspect=GetTextAspectRatio(current_dc, str);
+	aspect = getTextAspectRatio(current_dc, str);
 	glTranslatef(15.0, 8.0, -2.0);
 	glRotatef(spin, 0.0, 1, 0.0);
 	glScalef(font_height, font_height, font_depth);
-	draw_text_3D(current_dc, str);
+	drawText3D(current_dc, str);
 	glPopMatrix();
 
 	// Outline font display list may change front face definition
 	// So change it back to counter-clockwise
 	glFrontFace(GL_CCW);
-
 }
+
+
 
 void initText()
 {
@@ -186,7 +219,8 @@ void initText()
 				CLIP_DEFAULT_PRECIS,		// Clipping Precision
 				ANTIALIASED_QUALITY,		// Output Quality
 				FF_DONTCARE|DEFAULT_PITCH,	// Family And Pitch
-				(wchar_t *)"é»‘ä½“");			// Font Name
+				//(wchar_t *)"ºÚÌå");			// Font Name
+				(LPCWSTR)"ºÚÌå");			// Font Name
 
 	// Select font into current device context
 	current_dc=GetDC(NULL);
@@ -208,3 +242,27 @@ void myTimer(int value)
 	glutTimerFunc(20, myTimer, 0);
 	glutPostRedisplay();
 }
+
+void drawTv()
+{
+	glPushMatrix();   
+	glRotatef(180, 0, 1.0f, 0);
+	glTranslatef(0.0f, 0.1f, -4.0f);
+	glPushMatrix();	//µçÊÓ
+	glTranslatef(0.2f, 0.4f, 0.0f);
+	glScalef(1.0f, 1.0f, 1.0f);
+	glCallList(tv);
+	glPopMatrix();
+	glPushMatrix();								//µçÊÓ»­Ãæ
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);	// Set Texture Max Filter
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);	// Set Texture Min Filter
+	gluQuadricNormals(gluNewQuadric(), GLU_SMOOTH);						// Create Smooth Normals 
+	gluQuadricTexture(gluNewQuadric(), GL_TRUE);						// Create Texture Coords 
+	glTranslatef(10.0f, 10.0f, -5.0f);
+	glScalef(0.65f, 0.35f, 0.0f);
+	drawAVI();
+	glPopMatrix();
+	glPopMatrix();
+
+}
+

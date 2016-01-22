@@ -2,6 +2,7 @@
 
 #include <GL/glut.h>
 #include <math.h>
+#include <string>
 #include <iostream>
 #include <time.h>
 #include "maze.h"
@@ -9,29 +10,107 @@
 #include "screenShot.h"
 #include "addTexture.h"
 #include "drawElement.h"
+#include "obj.h"
+#include "glm.h"
+#include "avi.h"
+#include "particle.h"
+#include "mouse.h"
 
-using namespace std;                     
+using namespace std;
 
 vector<vector<int>> maze_matrix;
-GLuint texture[1];
-
+GLuint texture[3];
+GLuint tv, lamp, coin;
 GLdouble eye_pos[3] = { 1.5*BLOCK_SIZE, 8, 0, };
 GLdouble center[3] = { 1.5*BLOCK_SIZE, 8, -2 * BLOCK_SIZE };//c=e+ 旋转后的d
 GLdouble angle = -PI / 2;  //方向向量与x轴的夹角
-						  //长度为2*BLOCK_SIZE	
+//长度为2*BLOCK_SIZE	
 GLfloat view_width, view_height;
+int score = 0;
+int view_chance = 3;
+bool view_first = true;
+bool raining = true;
+bool avi = false;
+bool timeOut = false;
+bool ToTimeOut = false;
 
-bool view_first=true;
+string screenShotPath = "ScreenShot/";
+const std::string currentDateTime() {
+	time_t     now = time(0);
+	struct tm  tstruct;
+	char       buf[80];
+	tstruct = *localtime(&now);
+	strftime(buf, sizeof(buf), "%Y%m%d%H%M%S", &tstruct);
+	return buf;
+}
+
+void updateView(int width, int height);
+void print_tip(){
+	static char buffer[256];
+	int totalTime = 600;//total time is 2s.
+	int time = glutGet(GLUT_ELAPSED_TIME);
+	float timeRes = totalTime - time / 1000.0;
+	if (timeRes <= 120)
+	{
+		ToTimeOut = true;
+		updateView(view_width, view_height);
+	}
+	if (timeRes <= 0){
+		timeOut = true;
+		timeRes = 0;
+	}
+	sprintf_s(buffer, "<Amazing Maze> Time left:%.2f  Score:%d   Chances to look at map:%d", timeRes, score, view_chance);
+	glutSetWindowTitle(buffer);
+	char *c;
+	glDisable(GL_DEPTH_TEST);
+	glMatrixMode(GL_PROJECTION);// 选择投影矩阵
+	glPushMatrix();// 保存原矩阵
+	glLoadIdentity();// 装入单位矩阵
+	glOrtho(0, 480, 0, 480, -1, 1);// 位置正投影
+	glMatrixMode(GL_MODELVIEW);// 选择Modelview矩阵
+	glPushMatrix();// 保存原矩阵
+	glLoadIdentity();// 装入单位矩阵*/
+	glRasterPos2f(10, 10);
+	for (c = buffer; *c != '\0'; c++) {
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
+	}
+	glMatrixMode(GL_PROJECTION);// 选择投影矩阵
+	glPopMatrix();// 重置为原保存矩阵
+	glMatrixMode(GL_MODELVIEW);// 选择Modelview矩阵
+	glPopMatrix();// 重置为原保存矩阵
+	glEnable(GL_DEPTH_TEST);
+
+
+}
 void redraw()
 {
-
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);//开启深度测试之前必须调用这个函数。
-	glPushMatrix();								
-	Draw_Maze(maze_matrix, 21);
-	glPopMatrix();
-	glPushMatrix();		
-	Draw_Text();
-	glPopMatrix();
+	
+	if (!timeOut){
+
+		glPushMatrix();
+		drawMaze(maze_matrix, 21);
+		glPopMatrix();
+
+		glPushMatrix();
+		drawText();
+		glPopMatrix();
+
+		glPushMatrix();
+		drawCoins(GL_RENDER);
+		glPopMatrix();
+
+		if (raining) {
+			drawParticles();
+		}
+
+	}
+	if (avi || timeOut){
+		glPushMatrix();
+		drawTv();
+		glPopMatrix();
+	}
+	print_tip();
 	glutSwapBuffers();
 }
 
@@ -54,16 +133,30 @@ void updateView(int width, int height){
 		gluLookAt(eye_pos[0], eye_pos[1], eye_pos[2], center[0], center[1], center[2], 0, 1, 0);//第一人称视角
 	else
 		gluLookAt(0, 20.1, 0, 0, 0, 0, 0, 0, -1);  //俯视视角
-	
+
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	if (view_first)
 		gluPerspective(60.f, (GLfloat)width / (GLfloat)height, 2.0f, 210.0f);//第一人称
 	else
-		glOrtho(0,210,0,210,0,60);//  俯视
+		glOrtho(0, 210, 0, 210, 0, 60);//  俯视
 	glMatrixMode(GL_MODELVIEW);
 
-
+	//设置光照          
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	GLfloat light_pos[4] = { 60, 60, -40.0, 1 };
+	GLfloat light_color[4] = { 1, 1, 1, 1 };
+	if (ToTimeOut) {
+		light_color[0] = 0.02;
+		light_color[1] = 0.02;
+		light_color[2] = 0.02;
+	}
+	glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, light_color);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, light_color);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_color);
 
 }
 
@@ -72,18 +165,8 @@ void reshape(int width, int height)
 {
 	view_height = height;
 	view_width = width;
-	
-	updateView(width,height);
+	updateView(width, height);
 
-	//设置光照          
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	GLfloat light_pos[4] = { 60, 60, -40.0, 1 };
-	GLfloat light_color[4] = { 1, 1, 1, 1 };
-	glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, light_color);
-	
 }
 
 bool collision_detection(GLdouble new_x, GLdouble new_z){
@@ -91,15 +174,14 @@ bool collision_detection(GLdouble new_x, GLdouble new_z){
 	for (int p = -1; p < 2; p++)
 		for (int q = -1; q < 2; q++)
 		{
-			tmp_x = new_x + 2 * p;
-			tmp_z = new_z + 2 * q;
+			tmp_x = new_x + 3 * p;
+			tmp_z = new_z + 3 * q;
 			int i = tmp_x / BLOCK_SIZE;
 			int j = -tmp_z / BLOCK_SIZE;
 			if (i < 0 || j < 0 || i >= MAZE_SIZE || j >= MAZE_SIZE) return true;//超出地图范围
 			if (maze_matrix[i][j] == 1) return true;//代表碰撞
 		}
 	return false;
-
 }
 
 void key(unsigned char k, int x, int y){
@@ -132,21 +214,35 @@ void key(unsigned char k, int x, int y){
 		angle -= 3.0 / 180 * PI;
 		break;//左转，角度减小10度
 
-	case 'v':
-		view_first = !view_first;
+	case 'v'://切换第一人称视图和俯视视图
+		if (view_first)
+		{
+			if (view_chance > 0){
+				view_first = false;
+				view_chance--;
+				break;
+			}
+		}
+		else{
+			view_first = !view_first;
+		}
 		break;
 
-	case '0'://切换第一人称视图和俯视视图
-		newScreenShot(700, 700, "ScreenShots/tmp.bmp");
+	case '0':
+		screenShotPath = screenShotPath + currentDateTime();
+		screenShotPath += ".bmp";
+		newScreenShot(700, 700, screenShotPath.c_str());
 		break;
 
+	case 'r':
+		raining = !raining;
+		break;
+
+	case 'p':avi=!avi;
 	}
-	updateView(view_width,view_height);
 
+	updateView(view_width, view_height);
 }
-
-
-
 
 
 void idle()
@@ -154,35 +250,30 @@ void idle()
 	glutPostRedisplay();
 }
 
+void init()
+{
+	getNewMaze(10, 10, maze_matrix);
+
+	initText();
+	loadOBJ();
+	getTexture(texture);
+	initCoin();
+	initAVI();
+}
 
 int main(int argc, char *argv[])
 {
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE |GLUT_DEPTH);
-	glutInitWindowSize(700, 700);      
-
-
-	//生成迷宫
-	// maze有一个入口和一个出口，maze[1][0],maze[2*h-1][2*w]
-	getNewMaze(10, 10, maze_matrix);
-
-	for (int i = 0; i < 10 * 2 + 1; i++) {
-	for (int j = 0; j < 10 * 2 + 1; j++) {
-	cout << maze_matrix[i][j];
-	}
-	cout << endl;
-	}
-
-
-	int windowHandle
-		= glutCreateWindow("Maze-Game");
-	initText();
-	getTexture(texture);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+	glutInitWindowSize(900, 700);
+	int windowHandle = glutCreateWindow("Maze-Game");
+	init();
 	glutDisplayFunc(redraw);
-	glutReshapeFunc(reshape);		
-	glutIdleFunc(idle);							
+	glutReshapeFunc(reshape);
+	glutIdleFunc(idle);
 	glutKeyboardFunc(key);
-	glutTimerFunc(20,myTimer,0);
+	glutTimerFunc(20, myTimer, 0);
+	glutMouseFunc(mouse);
 	glutMainLoop();
 
 	return 0;

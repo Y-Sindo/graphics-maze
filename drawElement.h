@@ -3,22 +3,25 @@
 #include <Windows.h>
 using namespace std;
 
-void Draw_Cube(float size);
+void drawCube(float size);
 
-void Draw_Maze(vector<vector<int>>& matrix, int matrix_size);
+void drawMaze(vector<vector<int>>& matrix, int matrix_size);
     
-void Draw_Coins();
+void drawCoins(GLenum mode);
 
-void Draw_Map();
+void drawMap();
 
-float GetTextAspectRatio(HDC hDC, char *str);
+float getTextAspectRatio(HDC hDC, char *str);
 
-void draw_text_3D(HDC hDC, char *str);
+void drawText3D(HDC hDC, char *str);
 
-void Draw_Text();
+void drawText();
 
 void initText();
 
 void myTimer(int value);
 
+void drawTv();
+
+void initCoin();
 

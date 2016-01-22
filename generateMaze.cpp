@@ -5,6 +5,7 @@
 # include <vector>
 # include "generateMaze.h"
 # include <time.h>
+
 using namespace std;
 
 const int neigh[4][2] = { { 0,1 },{ 0,-1 },{ 1,0 },{ -1,0 } };
